@@ -10,7 +10,6 @@
     "start": "electron ./src/app.js"
   },
   "dependencies": {
-    "discord-auto-rpc": "^1.0.10",
     "discord-rpc-electron": "^4.0.1"
   }
 }
