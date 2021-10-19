@@ -5,73 +5,83 @@
 const { app, BrowserWindow } = require("electron");
 const DiscordRPC = require("discord-rpc");
 const clientId = "899850654472867840";
-
+const rpc = new DiscordRPC.Client({ transport: "ipc" });
+DiscordRPC.register(clientId);
+const startTimestamp = new Date();
 let mainWindow;
 
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 750,
-    minHeight: 750,
-    minWidth: 1280,
-    maximizable: true,
-    webPreferences: {
-      nodeIntegration: true,
-    },
-  });
+async function setActivity() {
+  if (!rpc || !mainWindow) {
+    return;
+  }
 
-  mainWindow.loadURL(
-    "https://accounts.google.com/signin/v2/identifier?continue=https%3A%2F%2Fdocs.google.com%2F%3Fhl%3Des&followup=https%3A%2F%2Fdocs.google.com%2F%3Fhl%3Des&hl=es&emr=1&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
-  );
-  mainWindow.setMenu(null);
+  mainWindow.webContents.on("did-finish-load",()=>{
 
-  mainWindow.webContents.on("did-finish-load", async () => {
-    // Only needed if you want to use spectate, join, or ask to join
-    DiscordRPC.register(clientId);
-
-    const rpc = new DiscordRPC.Client({ transport: "ipc" });
-    const startTimestamp = new Date();
-    const title = await mainWindow.webContents.getTitle();
+    rpc.setActivity({
+      details: mainWindow.webContents.getTitle(),
+      state: "Writing...",
+      startTimestamp,
+      largeImageKey: "googledoc_large",
+      smallImageKey: "googledoc_small",
+      instance: false,
+    });
     rpc.on("ready", () => {
-      rpc.setActivity({
-        details: `${title}`,
-        state: "Writing...",
-        startTimestamp,
-        largeImageKey: "googledoc_large",
-        smallImageKey: "googledoc_small",
-        instance: false,
-      });
-
-      // activity can only be set every 15 seconds
-      setInterval(() => {
+      console.log("Discord RPC: Ready");
+      setInterval (async () => {
         rpc.setActivity({
-          details: `${title}`,
+          details: mainWindow.webContents.getTitle(),
           state: "Writing...",
           startTimestamp,
           largeImageKey: "googledoc_large",
           smallImageKey: "googledoc_small",
           instance: false,
         });
-      }, 12000);
+        clearInterval()
+      }, 10e3)
     });
+  })
 
-    rpc.login({ clientId }).catch(console.error);
-
-    
+  rpc.on("connected", () => {
+    console.log("connected");
+  })
+  rpc.on("disconnected", () => {
+    console.log("disconnected");
+  })
+}
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1280,
+    height: 750,
+    minHeight: 750,
+    minWidth: 1280,
+    title: "Google Docs",
+    icon: "./icon.png",
+    maximizable: true,
+    webPreferences: {
+      nodeIntegration: true,
+    },
   });
 
-  
+  mainWindow.setMenu(null);
 
-
-
+  mainWindow.loadURL(
+    "https://accounts.google.com/signin/v2/identifier?continue=https%3A%2F%2Fdocs.google.com%2F%3Fhl%3Des&followup=https%3A%2F%2Fdocs.google.com%2F%3Fhl%3Des&hl=es&emr=1&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
+  );
+  mainWindow.webContents.on("dom-ready", async () => {
+    await setActivity();
+  })
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
 }
 
-app.on("ready", createWindow);
+app.on("ready", () => {
+  rpc.login({ clientId }).catch(console.error);
+  createWindow();
+});
 
 app.on("window-all-closed", () => {
+  rpc.destroy();
   app.quit();
 });
 
@@ -80,4 +90,3 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
