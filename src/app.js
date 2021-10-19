@@ -55,7 +55,7 @@ function createWindow() {
     minHeight: 750,
     minWidth: 1280,
     title: "Google Docs",
-    icon: "./icon.png",
+    icon: "./googledoc_large.svg",
     maximizable: true,
     webPreferences: {
       nodeIntegration: true,
