@@ -1,0 +1,16 @@
+{
+  "name": "GoogleDoc",
+  "version": "1.0.0",
+  "main": "./src/app.js",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^15.2.0"
+  },
+  "scripts": {
+    "start": "electron ./src/app.js"
+  },
+  "dependencies": {
+    "discord-auto-rpc": "^1.0.10",
+    "discord-rpc-electron": "^4.0.1"
+  }
+}
